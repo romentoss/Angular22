@@ -44,7 +44,7 @@
             "outputPath": "dist/angular22",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "baseHref": "/Angular22/",
+            "baseHref": "/angular22/",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
             "assets": [
