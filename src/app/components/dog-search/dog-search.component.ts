@@ -1,6 +1,6 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { DogService, DogBreed } from '../../services/dog.service';
 
 /**
@@ -18,17 +18,12 @@ import { DogService, DogBreed } from '../../services/dog.service';
  * 2. Signal Forms (model signals)
  *    - model() crea signals que permiten bindeo bidireccional
  *    - Estable y listo para producción en Angular 22
- *    - Integración nativa con Reactive Forms
+ *    - Se usa con [(ngModel)] para bindeo directo
  *
  * 3. Signals + Zoneless
  *    - Sin Zone.js (~15KB menos en el bundle)
  *    - Angular detecta cambios solo cuando las signals cambian
  *    - Mejor rendimiento y más predecible
- *
- * 4. resource() API
- *    - API declarativa para datos asíncronos
- *    - Estados integrados: isLoading, isError, value
- *    - Cacheo automático de peticiones
  *
  * =====================================================
  */
@@ -36,9 +31,8 @@ import { DogService, DogBreed } from '../../services/dog.service';
 @Component({
   selector: 'app-dog-search',
   standalone: true,
-  // Angular 22: OnPush es el DEFAULT para nuevos componentes
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="search-container">
       <h2>Buscador de Razas de Perros</h2>
@@ -98,20 +92,20 @@ import { DogService, DogBreed } from '../../services/dog.service';
 
       <!-- SECCION 2: Signal Forms Explicado -->
       <div class="info-box signal-forms-section">
-        <h4>2. Signal Forms - Formularios Reactivos</h4>
+        <h4>2. Signal Forms - Formularios Reactivos con model()</h4>
 
         <p>
           Angular 22 estabiliza <code>model()</code> para crear signals de formulario.
           A diferencia de <code>signal()</code>, <code>model()</code> permite bindeo
-          bidireccional con formularios.
+          bidireccional con <code>[(ngModel)]</code>.
         </p>
 
         <p><strong>Como funciona:</strong></p>
         <ul class="reason-list">
           <li><code>model(initialValue)</code> crea un model signal</li>
-          <li>Se puede usar con <code>[(ngModel)]</code> o <code>[formControl]</code></li>
+          <li>Se usa con <code>[(ngModel)]="breedControl"</code> para bindeo directo</li>
           <li>Notifica cambios automaticamente a Angular</li>
-          <li>Type-safe con validaciones integradas</li>
+          <li>Type-safe y reactivo</li>
         </ul>
 
         <p><strong>Comparacion con Reactive Forms tradicional:</strong></p>
@@ -132,14 +126,14 @@ import { DogService, DogBreed } from '../../services/dog.service';
             <span class="new">campoModel()</span>
           </div>
           <div class="comparison-row">
+            <span>Bindeo</span>
+            <span class="old">formControlName</span>
+            <span class="new">[(ngModel)]</span>
+          </div>
+          <div class="comparison-row">
             <span>Reactividad</span>
             <span class="old">valueChanges observable</span>
             <span class="new">effect() o computed()</span>
-          </div>
-          <div class="comparison-row">
-            <span>Testing</span>
-            <span class="old">Mas complejo</span>
-            <span class="new">Mas simple (signal)</span>
           </div>
         </div>
       </div>
@@ -194,11 +188,11 @@ import { DogService, DogBreed } from '../../services/dog.service';
         </ul>
       </div>
 
-      <!-- Selector de raza -->
-      <form [formGroup]="searchForm" class="search-form">
+      <!-- Selector de raza con model() y ngModel -->
+      <form class="search-form">
         <div class="form-group">
           <label for="breed">Raza</label>
-          <select id="breed" formControlName="breed" (change)="onBreedChange()">
+          <select id="breed" [(ngModel)]="breedControl" name="breed" (change)="onBreedChange()">
             <option value="">Selecciona una raza ({{ breeds().length }} disponibles)</option>
             @for (breed of breeds(); track breed.name) {
               <option [value]="breed.name">{{ breed.name }}</option>
@@ -324,12 +318,12 @@ import { DogService, DogBreed } from '../../services/dog.service';
             <span>ChangeDetectionStrategy.OnPush - Deteccion optimizada</span>
           </div>
           <div class="tech-item">
-            <span class="tech-badge">signal()</span>
-            <span>Estado reactivo: breeds, selectedBreed, loading, error</span>
+            <span class="tech-badge">model()</span>
+            <span>Signal Forms con bindeo bidireccional [(ngModel)]</span>
           </div>
           <div class="tech-item">
-            <span class="tech-badge">FormControl</span>
-            <span>Formulario reactivo con validacion</span>
+            <span class="tech-badge">signal()</span>
+            <span>Estado reactivo: breeds, selectedBreed, loading, error</span>
           </div>
           <div class="tech-item">
             <span class="tech-badge">inject()</span>
@@ -697,12 +691,8 @@ export class DogSearchComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  // Formulario reactivo
-  breedControl = new FormControl('', Validators.required);
-
-  searchForm = new FormGroup({
-    breed: this.breedControl,
-  });
+  // Signal Forms (Angular 22) - model() con bindeo bidireccional
+  breedControl = model<string>('');
 
   ngOnInit() {
     this.loadBreeds();
@@ -723,7 +713,7 @@ export class DogSearchComponent implements OnInit {
   }
 
   onBreedChange() {
-    const breed = this.searchForm.get('breed')?.value;
+    const breed = this.breedControl();
     if (!breed) return;
 
     this.loading.set(true);
